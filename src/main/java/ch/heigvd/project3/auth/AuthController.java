@@ -1,6 +1,8 @@
 package ch.heigvd.project3.auth;
 
 import ch.heigvd.project3.users.User;
+import de.mkammerer.argon2.Argon2;
+import de.mkammerer.argon2.Argon2Factory;
 import io.javalin.http.*;
 import io.jsonwebtoken.Jwts;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,12 +20,14 @@ public class AuthController {
     User loginUser =
         ctx.bodyValidator(User.class)
             .check(obj -> obj.email() != null, "Missing email")
-            .check(obj -> obj.password() != null, "Missing password")
+            .check(obj -> obj.passwordHash() != null, "Missing password")
             .get();
+
+    Argon2 argon2 = Argon2Factory.create();
 
     for (User user : users.values()) {
       if (user.email().equalsIgnoreCase(loginUser.email())
-          && user.password().equals(loginUser.password())) {
+          && argon2.verify(user.passwordHash(), loginUser.passwordHash().toCharArray())) {
         ctx.cookie("user", String.valueOf(user.id()));
         ctx.status(HttpStatus.OK);
         return;

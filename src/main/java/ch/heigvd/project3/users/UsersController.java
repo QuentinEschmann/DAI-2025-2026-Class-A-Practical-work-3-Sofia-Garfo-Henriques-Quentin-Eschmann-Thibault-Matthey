@@ -1,5 +1,7 @@
 package ch.heigvd.project3.users;
 
+import de.mkammerer.argon2.Argon2;
+import de.mkammerer.argon2.Argon2Factory;
 import io.javalin.http.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +23,7 @@ public class UsersController {
             .check(obj -> obj.firstName() != null, "Missing first name")
             .check(obj -> obj.lastName() != null, "Missing last name")
             .check(obj -> obj.email() != null, "Missing email")
-            .check(obj -> obj.password() != null, "Missing password")
+            .check(obj -> obj.passwordHash() != null, "Missing password")
             .check(obj -> Role.isValid(obj.role()), "Missing role")
             .get();
 
@@ -31,13 +33,15 @@ public class UsersController {
       }
     }
 
+    String hash = createHash(newUser.passwordHash());
+
     newUser =
         new User(
             uniqueId.getAndIncrement(),
             newUser.firstName(),
             newUser.lastName(),
             newUser.email(),
-            newUser.password(),
+            hash,
             newUser.role());
 
     users.put(newUser.id(), newUser);
@@ -92,7 +96,7 @@ public class UsersController {
             .check(obj -> obj.firstName() != null, "Missing first name")
             .check(obj -> obj.lastName() != null, "Missing last name")
             .check(obj -> obj.email() != null, "Missing email")
-            .check(obj -> obj.password() != null, "Missing password")
+            .check(obj -> obj.passwordHash() != null, "Missing password")
             .get();
 
     for (User user : users.values()) {
@@ -101,13 +105,15 @@ public class UsersController {
       }
     }
 
+    String hash = createHash(updateUser.passwordHash());
+
     updateUser =
         new User(
             id,
             updateUser.firstName(),
             updateUser.lastName(),
             updateUser.email(),
-            updateUser.password(),
+            hash,
             updateUser.role());
 
     users.put(id, updateUser);
@@ -125,5 +131,16 @@ public class UsersController {
     users.remove(id);
 
     ctx.status(HttpStatus.OK);
+  }
+
+  private String createHash(String pass) {
+    Argon2 argon2 = Argon2Factory.create();
+
+    char[] password = pass.toCharArray();
+    String hash = argon2.hash(3, 65536, 1, password);
+
+    if (!argon2.verify(hash, password)) throw new InternalServerErrorResponse();
+
+    return hash;
   }
 }
