@@ -2,10 +2,13 @@ package ch.heigvd.project3.auth;
 
 import ch.heigvd.project3.users.User;
 import io.javalin.http.*;
+import io.jsonwebtoken.Jwts;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.crypto.SecretKey;
 
 public class AuthController {
   private final ConcurrentHashMap<Integer, User> users;
+  private final SecretKey key = Jwts.SIG.HS256.key().build();
 
   public AuthController(ConcurrentHashMap<Integer, User> users) {
     this.users = users;
@@ -53,4 +56,6 @@ public class AuthController {
     ctx.status(HttpStatus.OK);
     ctx.json(user);
   }
+
+  private void createJWT(User u) {}
 }

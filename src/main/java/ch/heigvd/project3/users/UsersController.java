@@ -22,6 +22,7 @@ public class UsersController {
             .check(obj -> obj.lastName() != null, "Missing last name")
             .check(obj -> obj.email() != null, "Missing email")
             .check(obj -> obj.password() != null, "Missing password")
+            .check(obj -> Role.isValid(obj.role()), "Missing role")
             .get();
 
     for (User user : users.values()) {
@@ -36,7 +37,8 @@ public class UsersController {
             newUser.firstName(),
             newUser.lastName(),
             newUser.email(),
-            newUser.password());
+            newUser.password(),
+            newUser.role());
 
     users.put(newUser.id(), newUser);
 
@@ -94,7 +96,7 @@ public class UsersController {
             .get();
 
     for (User user : users.values()) {
-      if (updateUser.email().equalsIgnoreCase(user.email())) {
+      if (updateUser.email().equalsIgnoreCase(user.email()) && user.id() != updateUser.id()) {
         throw new ConflictResponse();
       }
     }
@@ -105,7 +107,8 @@ public class UsersController {
             updateUser.firstName(),
             updateUser.lastName(),
             updateUser.email(),
-            updateUser.password());
+            updateUser.password(),
+            updateUser.role());
 
     users.put(id, updateUser);
 
