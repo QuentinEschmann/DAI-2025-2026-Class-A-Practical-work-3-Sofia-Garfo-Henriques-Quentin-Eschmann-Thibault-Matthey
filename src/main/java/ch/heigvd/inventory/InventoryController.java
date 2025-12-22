@@ -22,7 +22,7 @@ public class InventoryController {
     Item newitem =
         ctx.bodyValidator(Item.class)
             .check(obj -> obj.name() != null, "Missing item's name")
-            .check(obj -> obj.num() <= 0, "Incorrect ammount")
+            .check(obj -> obj.num() >= 0, "Incorrect ammount")
             .get();
 
     String name = newitem.name();
@@ -41,40 +41,28 @@ public class InventoryController {
   }
 
   public void getOne(Context ctx) {
-    String name = ctx.queryParam("name");
+    Integer id = ctx.pathParamAsClass("id", Integer.class).get();
 
-    Item itemSearched = null;
-
-    for (Item item : inventory.values()) {
-      if (name.equalsIgnoreCase(item.name())) {
-        itemSearched = item;
-      }
-    }
-
-    if (itemSearched == null) {
+    Item item = inventory.get(id);
+    if (item == null) {
       throw new NotFoundResponse();
     }
 
-    ctx.json(itemSearched);
+    ctx.json(item);
   }
 
   public void getMany(Context ctx) {
-    String name = ctx.queryParam("Name");
+    String name = ctx.queryParam("name");
 
     List<Item> items = new ArrayList<>();
 
-    if (name.equals("ALL")) {
-      for (ConcurrentHashMap.Entry<Integer, Item> e : inventory.entrySet()) {
-        items.add(e.getValue());
-      }
+    if (name == null || name.equalsIgnoreCase("all")) {
+      items.addAll(inventory.values());
     } else {
-
-      for (Item item : this.inventory.values()) {
-        if (name != null && !item.name().equalsIgnoreCase(name)) {
-          continue;
+      for (Item item : inventory.values()) {
+        if (item.name().equalsIgnoreCase(name)) {
+          items.add(item);
         }
-
-        items.add(item);
       }
     }
 
@@ -91,14 +79,16 @@ public class InventoryController {
     Item updateItem =
         ctx.bodyValidator(Item.class)
             .check(obj -> obj.name() != null, "Missing item's name")
-            .check(obj -> obj.num() <= 0, "Incorrect ammount")
+            .check(obj -> obj.num() >= 0, "Incorrect ammount")
             .get();
 
     for (Item item : inventory.values()) {
-      if (updateItem.name().equalsIgnoreCase(item.name())) {
+      if (updateItem.name().equalsIgnoreCase(item.name()) && item.id() != id) {
         throw new ConflictResponse();
       }
     }
+
+    updateItem = new Item(id, updateItem.name(), updateItem.num());
 
     inventory.put(id, updateItem);
 

@@ -2,12 +2,12 @@ package ch.heigvd.auth;
 
 import ch.heigvd.users.User;
 import io.javalin.http.*;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AuthController {
-  private final ConcurrentMap<Integer, User> users;
+  private final ConcurrentHashMap<Integer, User> users;
 
-  public AuthController(ConcurrentMap<Integer, User> users) {
+  public AuthController(ConcurrentHashMap<Integer, User> users) {
     this.users = users;
   }
 

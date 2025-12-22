@@ -7,7 +7,6 @@ import ch.heigvd.users.User;
 import ch.heigvd.users.UsersController;
 import io.javalin.Javalin;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public class Main {
   // TODO : DEFINE THE PORT
@@ -17,7 +16,7 @@ public class Main {
 
     Javalin app = Javalin.create();
 
-    ConcurrentMap<Integer, User> users = new ConcurrentHashMap<>();
+    ConcurrentHashMap<Integer, User> users = new ConcurrentHashMap<>();
     ConcurrentHashMap<Integer, Item> inventory = new ConcurrentHashMap<>();
 
     AuthController authController = new AuthController(users);
@@ -41,5 +40,7 @@ public class Main {
     app.get("/inventory/{id}", inventoryController::getOne);
     app.put("/inventory/{id}", inventoryController::update);
     app.delete("/inventory/{id}", inventoryController::delete);
+
+    app.start(PORT);
   }
 }

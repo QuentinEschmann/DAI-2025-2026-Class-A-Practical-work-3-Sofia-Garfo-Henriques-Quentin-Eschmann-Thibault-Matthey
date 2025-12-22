@@ -3,15 +3,15 @@ package ch.heigvd.users;
 import io.javalin.http.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class UsersController {
-  private final ConcurrentMap<Integer, User> users;
+  private final ConcurrentHashMap<Integer, User> users;
 
   private final AtomicInteger uniqueId = new AtomicInteger(1);
 
-  public UsersController(ConcurrentMap<Integer, User> users) {
+  public UsersController(ConcurrentHashMap<Integer, User> users) {
     this.users = users;
   }
 
@@ -97,6 +97,14 @@ public class UsersController {
         throw new ConflictResponse();
       }
     }
+
+    updateUser =
+        new User(
+            id,
+            updateUser.firstName(),
+            updateUser.lastName(),
+            updateUser.email(),
+            updateUser.password());
 
     users.put(id, updateUser);
 
