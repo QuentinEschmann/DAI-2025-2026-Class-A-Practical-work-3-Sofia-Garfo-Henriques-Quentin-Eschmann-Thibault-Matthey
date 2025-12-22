@@ -4,13 +4,19 @@ import ch.heigvd.project3.users.User;
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import io.javalin.http.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.crypto.SecretKey;
 
 public class AuthController {
   private final ConcurrentHashMap<Integer, User> users;
-  private final SecretKey key = Jwts.SIG.HS256.key().build();
+  private static final SecretKey key = Jwts.SIG.HS256.key().build();
 
   public AuthController(ConcurrentHashMap<Integer, User> users) {
     this.users = users;
@@ -26,11 +32,13 @@ public class AuthController {
     Argon2 argon2 = Argon2Factory.create();
 
     for (User user : users.values()) {
-      if (user.email().equalsIgnoreCase(loginUser.email())
-          && argon2.verify(user.passwordHash(), loginUser.passwordHash().toCharArray())) {
-        ctx.cookie("user", String.valueOf(user.id()));
-        ctx.status(HttpStatus.OK);
-        return;
+      if (user.email().equalsIgnoreCase(loginUser.email())) {
+        if (argon2.verify(user.passwordHash(), loginUser.passwordHash().toCharArray())) {
+          ctx.cookie("session", String.valueOf(createJWT(user)));
+          ctx.status(HttpStatus.OK);
+          return;
+        }
+        break;
       }
     }
 
@@ -61,5 +69,49 @@ public class AuthController {
     ctx.json(user);
   }
 
-  private void createJWT(User u) {}
+  private String createJWT(User u) {
+    Instant now = Instant.now();
+    return Jwts.builder()
+        .subject(String.valueOf(u.id()))
+        .claim("id", u.id())
+        .claim("email", u.email())
+        .issuedAt(Date.from(now))
+        .expiration(Date.from(now.plus(Duration.ofHours(1))))
+        .signWith(key)
+        .compact();
+  }
+
+  public User validateJWT(String jwt) {
+    if (jwt == null || jwt.isBlank()) {
+      throw new UnauthorizedResponse();
+    }
+
+    try {
+      Jws<Claims> parsedJwt = Jwts.parser().verifyWith(key).build().parseSignedClaims(jwt);
+      Claims claims = parsedJwt.getPayload();
+
+      Integer id = claims.get("id", Integer.class);
+      if (id == null) {
+        String subject = claims.getSubject();
+        if (subject != null && !subject.isBlank()) {
+          id = Integer.parseInt(subject);
+        }
+      }
+
+      if (id == null) {
+        throw new UnauthorizedResponse();
+      }
+
+      User user = users.get(id);
+      if (user == null
+          || (claims.get("email") != null
+              && !claims.get("email", String.class).equalsIgnoreCase(user.email()))) {
+        throw new UnauthorizedResponse();
+      }
+
+      return user;
+    } catch (JwtException | IllegalArgumentException e) {
+      throw new UnauthorizedResponse();
+    }
+  }
 }
