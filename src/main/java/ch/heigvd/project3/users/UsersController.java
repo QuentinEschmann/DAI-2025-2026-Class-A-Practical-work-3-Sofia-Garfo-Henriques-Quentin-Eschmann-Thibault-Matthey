@@ -41,7 +41,6 @@ public class UsersController {
     users.put(newUser.id(), newUser);
 
     ctx.status(HttpStatus.CREATED);
-    ctx.json(newUser);
   }
 
   public void getOne(Context ctx) {
@@ -53,6 +52,7 @@ public class UsersController {
       throw new NotFoundResponse();
     }
 
+    ctx.status(HttpStatus.OK);
     ctx.json(user);
   }
 
@@ -74,6 +74,7 @@ public class UsersController {
       users.add(user);
     }
 
+    ctx.status(HttpStatus.OK);
     ctx.json(users);
   }
 
@@ -108,7 +109,7 @@ public class UsersController {
 
     users.put(id, updateUser);
 
-    ctx.json(updateUser);
+    ctx.status(HttpStatus.OK);
   }
 
   public void delete(Context ctx) {
@@ -120,6 +121,6 @@ public class UsersController {
 
     users.remove(id);
 
-    ctx.status(HttpStatus.NO_CONTENT);
+    ctx.status(HttpStatus.OK);
   }
 }

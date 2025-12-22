@@ -22,7 +22,7 @@ public class AuthController {
       if (user.email().equalsIgnoreCase(loginUser.email())
           && user.password().equals(loginUser.password())) {
         ctx.cookie("user", String.valueOf(user.id()));
-        ctx.status(HttpStatus.NO_CONTENT);
+        ctx.status(HttpStatus.OK);
         return;
       }
     }
@@ -32,7 +32,7 @@ public class AuthController {
 
   public void logout(Context ctx) {
     ctx.removeCookie("user");
-    ctx.status(HttpStatus.NO_CONTENT);
+    ctx.status(HttpStatus.OK);
   }
 
   public void profile(Context ctx) {
@@ -50,6 +50,7 @@ public class AuthController {
       throw new UnauthorizedResponse();
     }
 
+    ctx.status(HttpStatus.OK);
     ctx.json(user);
   }
 }

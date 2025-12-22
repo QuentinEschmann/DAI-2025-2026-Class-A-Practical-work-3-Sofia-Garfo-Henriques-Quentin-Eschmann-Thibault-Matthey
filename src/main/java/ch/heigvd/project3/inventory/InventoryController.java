@@ -48,6 +48,7 @@ public class InventoryController {
       throw new NotFoundResponse();
     }
 
+    ctx.status(HttpStatus.OK);
     ctx.json(item);
   }
 
@@ -66,6 +67,7 @@ public class InventoryController {
       }
     }
 
+    ctx.status(HttpStatus.OK);
     ctx.json(items);
   }
 
@@ -92,7 +94,7 @@ public class InventoryController {
 
     inventory.put(id, updateItem);
 
-    ctx.json(updateItem);
+    ctx.status(HttpStatus.OK);
   }
 
   public void delete(Context ctx) {
@@ -104,6 +106,6 @@ public class InventoryController {
 
     inventory.remove(id);
 
-    ctx.status(HttpStatus.NO_CONTENT);
+    ctx.status(HttpStatus.OK);
   }
 }
