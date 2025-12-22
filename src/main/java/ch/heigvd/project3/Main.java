@@ -1,10 +1,10 @@
-package ch.heigvd;
+package ch.heigvd.project3;
 
-import ch.heigvd.auth.AuthController;
-import ch.heigvd.inventory.InventoryController;
-import ch.heigvd.inventory.Item;
-import ch.heigvd.users.User;
-import ch.heigvd.users.UsersController;
+import ch.heigvd.project3.auth.AuthController;
+import ch.heigvd.project3.inventory.InventoryController;
+import ch.heigvd.project3.inventory.Item;
+import ch.heigvd.project3.users.User;
+import ch.heigvd.project3.users.UsersController;
 import io.javalin.Javalin;
 import java.util.concurrent.ConcurrentHashMap;
 

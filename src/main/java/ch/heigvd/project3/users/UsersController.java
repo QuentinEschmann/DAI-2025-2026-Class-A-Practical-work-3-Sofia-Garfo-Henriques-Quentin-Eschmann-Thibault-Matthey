@@ -1,4 +1,4 @@
-package ch.heigvd.users;
+package ch.heigvd.project3.users;
 
 import io.javalin.http.*;
 import java.util.ArrayList;

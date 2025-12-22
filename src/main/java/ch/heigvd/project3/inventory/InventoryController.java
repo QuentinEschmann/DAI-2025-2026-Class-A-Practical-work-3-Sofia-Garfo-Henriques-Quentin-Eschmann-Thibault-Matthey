@@ -1,4 +1,4 @@
-package ch.heigvd.inventory;
+package ch.heigvd.project3.inventory;
 
 import io.javalin.http.*;
 import java.util.ArrayList;

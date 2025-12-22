@@ -1,6 +1,6 @@
-package ch.heigvd.auth;
+package ch.heigvd.project3.auth;
 
-import ch.heigvd.users.User;
+import ch.heigvd.project3.users.User;
 import io.javalin.http.*;
 import java.util.concurrent.ConcurrentHashMap;
 
