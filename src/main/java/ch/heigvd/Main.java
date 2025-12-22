@@ -23,23 +23,23 @@ public class Main {
     UsersController usersController = new UsersController(users);
     InventoryController inventoryController = new InventoryController(inventory);
 
-    app.post("/login", authController::login);
-    app.post("/logout", authController::logout);
-    app.get("/profile", authController::profile);
+    app.post("/auth/login", authController::login);
+    app.post("/auth/logout", authController::logout);
+    app.get("/auth/profile", authController::profile);
 
     // Users routes
-    app.post("/users", usersController::create);
-    app.get("/users", usersController::getMany);
-    app.get("/users/{id}", usersController::getOne);
-    app.put("/users/{id}", usersController::update);
-    app.delete("/users/{id}", usersController::delete);
+    app.post("/users/create", usersController::create);
+    app.get("/users/list", usersController::getMany);
+    app.get("/users/list/{id}", usersController::getOne);
+    app.put("/users/update/{id}", usersController::update);
+    app.delete("/users/remove/{id}", usersController::delete);
 
     // Inventory Routes
-    app.post("/inventory", inventoryController::create);
-    app.get("/inventory", inventoryController::getMany);
-    app.get("/inventory/{id}", inventoryController::getOne);
-    app.put("/inventory/{id}", inventoryController::update);
-    app.delete("/inventory/{id}", inventoryController::delete);
+    app.post("/inventory/create", inventoryController::create);
+    app.get("/inventory/list", inventoryController::getMany);
+    app.get("/inventory/list/{id}", inventoryController::getOne);
+    app.put("/inventory/update/{id}", inventoryController::update);
+    app.delete("/inventory/remove/{id}", inventoryController::delete);
 
     app.start(PORT);
   }
