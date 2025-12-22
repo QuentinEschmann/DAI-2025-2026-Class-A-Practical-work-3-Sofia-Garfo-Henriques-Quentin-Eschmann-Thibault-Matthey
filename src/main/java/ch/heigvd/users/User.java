@@ -1,4 +1,3 @@
 package ch.heigvd.users;
 
-public class User {
-}
+public record User(Integer id, String firstName, String lastName, String email, String password) {}
