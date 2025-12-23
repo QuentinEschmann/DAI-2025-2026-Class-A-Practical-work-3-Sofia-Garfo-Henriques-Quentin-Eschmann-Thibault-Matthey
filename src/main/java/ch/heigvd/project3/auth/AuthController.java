@@ -15,6 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.crypto.SecretKey;
 
 public class AuthController {
+  public static final String SESSION_COOKIE_NAME = "session";
+  public static final String AUTHENTICATED_USER_KEY = "authUser";
   private final ConcurrentHashMap<Integer, User> users;
   private static final SecretKey key = Jwts.SIG.HS256.key().build();
 
@@ -34,7 +36,8 @@ public class AuthController {
     for (User user : users.values()) {
       if (user.email().equalsIgnoreCase(loginUser.email())) {
         if (argon2.verify(user.passwordHash(), loginUser.passwordHash().toCharArray())) {
-          ctx.cookie("session", String.valueOf(createJWT(user)));
+          ctx.cookie(SESSION_COOKIE_NAME, createJWT(user));
+          ctx.attribute(AUTHENTICATED_USER_KEY, user);
           ctx.status(HttpStatus.OK);
           return;
         }
@@ -46,21 +49,12 @@ public class AuthController {
   }
 
   public void logout(Context ctx) {
-    ctx.removeCookie("user");
+    ctx.removeCookie(SESSION_COOKIE_NAME);
     ctx.status(HttpStatus.OK);
   }
 
   public void profile(Context ctx) {
-    String userIdCookie = ctx.cookie("user");
-
-    if (userIdCookie == null) {
-      throw new UnauthorizedResponse();
-    }
-
-    Integer userId = Integer.parseInt(userIdCookie);
-
-    User user = users.get(userId);
-
+    User user = ctx.attribute(AUTHENTICATED_USER_KEY);
     if (user == null) {
       throw new UnauthorizedResponse();
     }

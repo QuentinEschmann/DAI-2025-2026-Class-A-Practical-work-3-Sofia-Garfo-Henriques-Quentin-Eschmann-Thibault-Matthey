@@ -1,6 +1,8 @@
 package ch.heigvd.project3.users;
 
-public enum Role {
+import io.javalin.security.RouteRole;
+
+public enum Role implements RouteRole {
   UNKNOWN(0),
   READ(1),
   WRITE(2),
