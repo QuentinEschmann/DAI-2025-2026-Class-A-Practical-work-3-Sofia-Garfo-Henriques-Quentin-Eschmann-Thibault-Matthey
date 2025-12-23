@@ -86,7 +86,7 @@ public class Main {
 
           User authenticated = ctx.attribute(AuthController.AUTHENTICATED_USER_KEY);
           if (authenticated == null) {
-            throw new UnauthorizedResponse();
+            throw new UnauthorizedResponse("User not authenticated.");
           }
 
           boolean allowed =
@@ -99,7 +99,7 @@ public class Main {
                               && authenticated.role().getCode() >= required.getCode());
 
           if (!allowed) {
-            throw new ForbiddenResponse();
+            throw new ForbiddenResponse("User does not have the required role.");
           }
         });
 
