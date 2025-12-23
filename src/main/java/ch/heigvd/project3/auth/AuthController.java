@@ -14,9 +14,7 @@ import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.crypto.SecretKey;
 
-/**
- * Controller for authentication-related actions such as login, logout, and profile retrieval.
- */
+/** Controller for authentication-related actions such as login, logout, and profile retrieval. */
 public class AuthController {
   public static final String SESSION_COOKIE_NAME = "session";
   public static final String AUTHENTICATED_USER_KEY = "authUser";
@@ -29,7 +27,9 @@ public class AuthController {
 
   /**
    * Handles user login by validating credentials and issuing a JWT upon successful authentication.
-   * @param ctx the Javalin context containing the request and response 
+   *
+   * @param ctx the Javalin context containing the request and response
+   * @throws UnauthorizedResponse if the credentials are invalid
    */
   public void login(Context ctx) {
     User loginUser =
@@ -52,11 +52,12 @@ public class AuthController {
       }
     }
 
-    throw new UnauthorizedResponse();
+    throw new UnauthorizedResponse("Invalid email or password.");
   }
 
   /**
    * Handles user logout by removing the session cookie.
+   *
    * @param ctx the Javalin context containing the request and response
    */
   public void logout(Context ctx) {
@@ -66,12 +67,13 @@ public class AuthController {
 
   /**
    * Retrieves the profile of the authenticated user.
+   *
    * @param ctx the Javalin context containing the request and response
    */
   public void profile(Context ctx) {
     User user = ctx.attribute(AUTHENTICATED_USER_KEY);
     if (user == null) {
-      throw new UnauthorizedResponse();
+      throw new UnauthorizedResponse("User not authenticated.");
     }
 
     ctx.status(HttpStatus.OK);
@@ -80,6 +82,7 @@ public class AuthController {
 
   /**
    * Creates a JWT for the given user.
+   *
    * @param u the user for whom to create the JWT
    * @return the generated JWT as a string
    */
@@ -97,13 +100,14 @@ public class AuthController {
 
   /**
    * Validates the provided JWT and returns the associated user if valid.
+   *
    * @param jwt the JWT to validate
    * @return the user associated with the JWT
    * @throws UnauthorizedResponse if the JWT is invalid or the user does not exist
    */
   public User validateJWT(String jwt) {
     if (jwt == null || jwt.isBlank()) {
-      throw new UnauthorizedResponse();
+      throw new UnauthorizedResponse("Missing or empty JWT.");
     }
 
     try {
@@ -119,19 +123,19 @@ public class AuthController {
       }
 
       if (id == null) {
-        throw new UnauthorizedResponse();
+        throw new UnauthorizedResponse("Invalid JWT: missing user ID.");
       }
 
       User user = users.get(id);
       if (user == null
           || (claims.get("email") != null
               && !claims.get("email", String.class).equalsIgnoreCase(user.email()))) {
-        throw new UnauthorizedResponse();
+        throw new UnauthorizedResponse("Invalid JWT: user does not exist.");
       }
 
       return user;
     } catch (JwtException | IllegalArgumentException e) {
-      throw new UnauthorizedResponse();
+      throw new UnauthorizedResponse("Invalid JWT.");
     }
   }
 }

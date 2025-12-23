@@ -20,11 +20,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Main {
   // TODO : DEFINE THE PORT
   public static final int PORT = 8080;
-  
-/**
- * Main method to start the Javalin server and configure routes.
- * @param args command-line arguments
- */
+
+  /**
+   * Main method to start the Javalin server and configure routes.
+   *
+   * @param args command-line arguments
+   */
   public static void main(String[] args) {
 
     ConcurrentHashMap<Integer, User> users = new ConcurrentHashMap<>();
@@ -38,7 +39,7 @@ public class Main {
             "Admin",
             "User",
             "admin@example.com",
-            argon2.hash(2, 65536, 1, "admin".toCharArray()),
+            argon2.hash(3, 65536, 1, "admin".toCharArray()),
             Role.ADMIN);
     users.put(defaultAdmin.id(), defaultAdmin);
 

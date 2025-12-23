@@ -2,9 +2,7 @@ package ch.heigvd.project3.users;
 
 import io.javalin.security.RouteRole;
 
-/**
- * Enumeration of user roles with associated access levels.
- */
+/** Enumeration of user roles with associated access levels. */
 public enum Role implements RouteRole {
   UNKNOWN(0),
   READ(1),
@@ -15,6 +13,7 @@ public enum Role implements RouteRole {
 
   /**
    * Constructor for Role enum.
+   *
    * @param code the access level code associated with the role
    */
   Role(int code) {
@@ -23,6 +22,7 @@ public enum Role implements RouteRole {
 
   /**
    * Gets the access level code of the role.
+   *
    * @return the access level code
    */
   public int getCode() {
@@ -31,6 +31,7 @@ public enum Role implements RouteRole {
 
   /**
    * Validates if the provided role is a valid Role enum value.
+   *
    * @param role the role to validate
    * @return true if the role is valid, false otherwise
    */

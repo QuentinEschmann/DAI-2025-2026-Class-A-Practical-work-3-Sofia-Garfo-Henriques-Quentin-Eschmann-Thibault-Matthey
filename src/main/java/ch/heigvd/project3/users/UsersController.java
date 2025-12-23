@@ -22,6 +22,7 @@ public class UsersController {
 
   /**
    * Creates a new user.
+   *
    * @param ctx the Javalin context containing the request and response
    * @throws ConflictResponse if a user with the same email already exists
    */
@@ -59,6 +60,7 @@ public class UsersController {
 
   /**
    * Retrieves a single user by ID.
+   *
    * @param ctx the Javalin context containing the request and response
    * @throws NotFoundResponse if the user with the specified ID does not exist
    */
@@ -72,18 +74,19 @@ public class UsersController {
     }
 
     ctx.status(HttpStatus.OK);
-    ctx.json(user);
+    ctx.json(toPublicUser(user));
   }
 
   /**
    * Retrieves multiple users, optionally filtered by first name and/or last name.
+   *
    * @param ctx the Javalin context containing the request and response
    */
   public void getMany(Context ctx) {
     String firstName = ctx.queryParam("firstName");
     String lastName = ctx.queryParam("lastName");
 
-    List<User> users = new ArrayList<>();
+    List<PublicUser> users = new ArrayList<>();
 
     for (User user : this.users.values()) {
       if (firstName != null && !user.firstName().equalsIgnoreCase(firstName)) {
@@ -94,7 +97,7 @@ public class UsersController {
         continue;
       }
 
-      users.add(user);
+      users.add(toPublicUser(user));
     }
 
     ctx.status(HttpStatus.OK);
@@ -103,6 +106,7 @@ public class UsersController {
 
   /**
    * Updates an existing user.
+   *
    * @param ctx the Javalin context containing the request and response
    * @throws NotFoundResponse if the user with the specified ID does not exist
    * @throws ConflictResponse if a user with the same email already exists
@@ -111,7 +115,7 @@ public class UsersController {
     Integer id = ctx.pathParamAsClass("id", Integer.class).get();
 
     if (!users.containsKey(id)) {
-      throw new NotFoundResponse();
+      throw new NotFoundResponse("User not found.");
     }
 
     User updateUser =
@@ -120,11 +124,19 @@ public class UsersController {
             .check(obj -> obj.lastName() != null, "Missing last name")
             .check(obj -> obj.email() != null, "Missing email")
             .check(obj -> obj.passwordHash() != null, "Missing password")
+            .check(obj -> Role.isValid(obj.role()), "Missing role")
             .get();
 
     for (User user : users.values()) {
-      if (updateUser.email().equalsIgnoreCase(user.email()) && user.id() != updateUser.id()) {
-        throw new ConflictResponse();
+      if (updateUser.email().equalsIgnoreCase(user.email()) && user.id() != id) {
+        throw new ConflictResponse("Email already in use by another user.");
+      }
+    }
+
+    if (users.get(id).role() == Role.ADMIN && updateUser.role() != Role.ADMIN) {
+      long adminCount = users.values().stream().filter(u -> u.role() == Role.ADMIN).count();
+      if (adminCount <= 1) {
+        throw new ConflictResponse("Cannot remove the last admin user.");
       }
     }
 
@@ -146,6 +158,7 @@ public class UsersController {
 
   /**
    * Deletes a user by ID.
+   *
    * @param ctx the Javalin context containing the request and response
    * @throws NotFoundResponse if the user with the specified ID does not exist
    */
@@ -153,7 +166,7 @@ public class UsersController {
     Integer id = ctx.pathParamAsClass("id", Integer.class).get();
 
     if (!users.containsKey(id)) {
-      throw new NotFoundResponse();
+      throw new NotFoundResponse("User not found.");
     }
 
     users.remove(id);
@@ -163,6 +176,7 @@ public class UsersController {
 
   /**
    * Creates a hash of the given password using Argon2.
+   *
    * @param pass the password to hash
    * @return the hashed password
    * @throws InternalServerErrorResponse if hashing fails
@@ -173,8 +187,18 @@ public class UsersController {
     char[] password = pass.toCharArray();
     String hash = argon2.hash(3, 65536, 1, password);
 
-    if (!argon2.verify(hash, password)) throw new InternalServerErrorResponse();
+    if (!argon2.verify(hash, password)) throw new InternalServerErrorResponse("Hashing failed.");
 
     return hash;
+  }
+
+  /**
+   * Converts a User to a PublicUser by omitting sensitive information.
+   *
+   * @param u the User object to convert
+   * @return a PublicUser object with sensitive information omitted
+   */
+  private PublicUser toPublicUser(User u) {
+    return new PublicUser(u.id(), u.firstName(), u.lastName(), u.email(), u.role());
   }
 }
