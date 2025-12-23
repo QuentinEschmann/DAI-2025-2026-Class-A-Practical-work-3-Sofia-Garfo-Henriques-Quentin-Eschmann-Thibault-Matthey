@@ -38,7 +38,18 @@ public class Main {
     UsersController usersController = new UsersController(users);
     InventoryController inventoryController = new InventoryController(inventory);
 
-    Javalin app = Javalin.create();
+    // for testing purposes
+    Javalin app =
+        Javalin.create(
+            config ->
+                config.bundledPlugins.enableCors(
+                    cors ->
+                        cors.addRule(
+                            rule -> {
+                              // allow credentialed requests from any origin
+                              rule.reflectClientOrigin = true;
+                              rule.allowCredentials = true;
+                            })));
 
     app.before(
         ctx -> {
