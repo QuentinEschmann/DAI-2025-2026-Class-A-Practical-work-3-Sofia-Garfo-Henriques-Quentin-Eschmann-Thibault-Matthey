@@ -13,10 +13,18 @@ import io.javalin.http.ForbiddenResponse;
 import io.javalin.http.UnauthorizedResponse;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Main application class that sets up the Javalin server and configures routes for authentication,
+ * user management, and inventory management.
+ */
 public class Main {
   // TODO : DEFINE THE PORT
   public static final int PORT = 8080;
-
+  
+/**
+ * Main method to start the Javalin server and configure routes.
+ * @param args command-line arguments
+ */
   public static void main(String[] args) {
 
     ConcurrentHashMap<Integer, User> users = new ConcurrentHashMap<>();

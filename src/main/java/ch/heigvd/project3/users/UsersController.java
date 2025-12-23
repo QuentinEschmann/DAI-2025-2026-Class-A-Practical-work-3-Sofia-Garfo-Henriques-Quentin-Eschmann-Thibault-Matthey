@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Controller for user-related actions such as creating, retrieving, updating, and deleting users.
+ */
 public class UsersController {
   private final ConcurrentHashMap<Integer, User> users;
 
@@ -17,6 +20,11 @@ public class UsersController {
     this.users = users;
   }
 
+  /**
+   * Creates a new user.
+   * @param ctx the Javalin context containing the request and response
+   * @throws ConflictResponse if a user with the same email already exists
+   */
   public void create(Context ctx) {
     User newUser =
         ctx.bodyValidator(User.class)
@@ -49,6 +57,11 @@ public class UsersController {
     ctx.status(HttpStatus.CREATED);
   }
 
+  /**
+   * Retrieves a single user by ID.
+   * @param ctx the Javalin context containing the request and response
+   * @throws NotFoundResponse if the user with the specified ID does not exist
+   */
   public void getOne(Context ctx) {
     Integer id = ctx.pathParamAsClass("id", Integer.class).get();
 
@@ -62,6 +75,10 @@ public class UsersController {
     ctx.json(user);
   }
 
+  /**
+   * Retrieves multiple users, optionally filtered by first name and/or last name.
+   * @param ctx the Javalin context containing the request and response
+   */
   public void getMany(Context ctx) {
     String firstName = ctx.queryParam("firstName");
     String lastName = ctx.queryParam("lastName");
@@ -84,6 +101,12 @@ public class UsersController {
     ctx.json(users);
   }
 
+  /**
+   * Updates an existing user.
+   * @param ctx the Javalin context containing the request and response
+   * @throws NotFoundResponse if the user with the specified ID does not exist
+   * @throws ConflictResponse if a user with the same email already exists
+   */
   public void update(Context ctx) {
     Integer id = ctx.pathParamAsClass("id", Integer.class).get();
 
@@ -121,6 +144,11 @@ public class UsersController {
     ctx.status(HttpStatus.OK);
   }
 
+  /**
+   * Deletes a user by ID.
+   * @param ctx the Javalin context containing the request and response
+   * @throws NotFoundResponse if the user with the specified ID does not exist
+   */
   public void delete(Context ctx) {
     Integer id = ctx.pathParamAsClass("id", Integer.class).get();
 
@@ -133,6 +161,12 @@ public class UsersController {
     ctx.status(HttpStatus.OK);
   }
 
+  /**
+   * Creates a hash of the given password using Argon2.
+   * @param pass the password to hash
+   * @return the hashed password
+   * @throws InternalServerErrorResponse if hashing fails
+   */
   private String createHash(String pass) {
     Argon2 argon2 = Argon2Factory.create();
 

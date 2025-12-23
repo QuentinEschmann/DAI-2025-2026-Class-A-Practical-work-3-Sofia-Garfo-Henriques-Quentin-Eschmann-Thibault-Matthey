@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Controller for inventory-related actions such as creating, retrieving, updating, and deleting items.
+ */
 public class InventoryController {
   // TODO : Create an object seems to facilitate the database, i store int, item so we are also able
   // to expand with ease our item, for example we could stock the number of reserved item there and
@@ -18,6 +21,11 @@ public class InventoryController {
     this.inventory = inventory;
   }
 
+  /**
+   * Creates a new item in the inventory.
+   * @param ctx the Javalin context containing the request and response
+   * @throws ConflictResponse if an item with the same name already exists
+   */
   public void create(Context ctx) {
     Item newitem =
         ctx.bodyValidator(Item.class)
@@ -40,6 +48,11 @@ public class InventoryController {
     ctx.json(newitem);
   }
 
+  /**
+   * Retrieves a single item from the inventory by its ID.
+   * @param ctx the Javalin context containing the request and response
+   * @throws NotFoundResponse if the item with the specified ID does not exist
+   */
   public void getOne(Context ctx) {
     Integer id = ctx.pathParamAsClass("id", Integer.class).get();
 
@@ -52,6 +65,10 @@ public class InventoryController {
     ctx.json(item);
   }
 
+  /**
+   * Retrieves multiple items from the inventory, optionally filtered by name.
+   * @param ctx the Javalin context containing the request and response
+   */
   public void getMany(Context ctx) {
     String name = ctx.queryParam("name");
 
@@ -71,6 +88,12 @@ public class InventoryController {
     ctx.json(items);
   }
 
+  /**
+   * Updates an existing item in the inventory.
+   * @param ctx the Javalin context containing the request and response
+   * @throws NotFoundResponse if the item with the specified ID does not exist
+   * @throws ConflictResponse if an item with the same name already exists
+   */
   public void update(Context ctx) {
     Integer id = ctx.pathParamAsClass("id", Integer.class).get();
 
@@ -97,6 +120,11 @@ public class InventoryController {
     ctx.status(HttpStatus.OK);
   }
 
+  /**
+   * Deletes an item from the inventory by its ID.
+   * @param ctx the Javalin context containing the request and response
+   * @throws NotFoundResponse if the item with the specified ID does not exist
+   */
   public void delete(Context ctx) {
     Integer id = ctx.pathParamAsClass("id", Integer.class).get();
 
