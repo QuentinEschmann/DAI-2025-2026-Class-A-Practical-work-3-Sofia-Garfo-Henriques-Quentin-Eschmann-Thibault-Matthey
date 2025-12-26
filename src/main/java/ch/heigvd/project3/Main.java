@@ -1,6 +1,7 @@
 package ch.heigvd.project3;
 
 import ch.heigvd.project3.auth.AuthController;
+import ch.heigvd.project3.auth.AuthUtil;
 import ch.heigvd.project3.inventory.InventoryController;
 import ch.heigvd.project3.inventory.Item;
 import ch.heigvd.project3.users.Role;
@@ -39,7 +40,7 @@ public class Main {
             "Admin",
             "User",
             "admin@example.com",
-            argon2.hash(3, 65536, 1, "admin".toCharArray()),
+            AuthUtil.createHash("admin"),
             Role.ADMIN);
     users.put(defaultAdmin.id(), defaultAdmin);
 
@@ -119,7 +120,7 @@ public class Main {
     app.get("/inventory/list", inventoryController::getMany, Role.READ, Role.WRITE, Role.ADMIN);
     app.get("/inventory/list/{id}", inventoryController::getOne, Role.READ, Role.WRITE, Role.ADMIN);
     app.put("/inventory/update/{id}", inventoryController::update, Role.WRITE, Role.ADMIN);
-    app.delete("/inventory/remove/{id}", inventoryController::delete, Role.ADMIN);
+    app.delete("/inventory/remove/{id}", inventoryController::delete, Role.WRITE, Role.ADMIN);
 
     app.start(PORT);
   }
