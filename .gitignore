@@ -25,3 +25,6 @@ replay_pid*
 
 # compiled stuff
 target/*
+
+#random files
+dependency-reduced-pom.xml
