@@ -1,11 +1,17 @@
 package ch.heigvd.project3.users;
 
+import ch.heigvd.project3.auth.AuthUtil;
 import io.javalin.http.*;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import ch.heigvd.project3.auth.AuthUtil;
 
 /**
  * Controller for user-related actions such as creating, retrieving, updating, and deleting users.
@@ -25,6 +31,24 @@ public class UsersController {
    * @param ctx the Javalin context containing the request and response
    * @throws ConflictResponse if a user with the same email already exists
    */
+  @OpenApi(
+      path = "/users/create",
+      methods = {HttpMethod.POST},
+      summary = "Create a new user",
+      description = "Creates a new user in the system.",
+      requestBody =
+          @OpenApiRequestBody(
+              content = {
+                @OpenApiContent(
+                    type = "application/json",
+                    example =
+                        "{\"firstName\":\"John\",\"lastName\":\"Doe\",\"email\":\"john.doe@example.com\",\"password\":\"password\",\"role\":\"1\"}")
+              }),
+      tags = {"User Management"},
+      responses = {
+        @OpenApiResponse(status = "201", description = "User created successfully"),
+        @OpenApiResponse(status = "409", description = "User with the same email already exists")
+      })
   public void create(Context ctx) {
     User newUser =
         ctx.bodyValidator(User.class)
@@ -63,6 +87,22 @@ public class UsersController {
    * @param ctx the Javalin context containing the request and response
    * @throws NotFoundResponse if the user with the specified ID does not exist
    */
+  @OpenApi(
+      path = "/users/list/{id}",
+      methods = {HttpMethod.GET},
+      summary = "Get a user by ID",
+      description = "Retrieves a single user by their ID.",
+      pathParams = {
+        @OpenApiParam(name = "id", type = Integer.class, description = "User ID", required = true)
+      },
+      tags = {"User Management"},
+      responses = {
+        @OpenApiResponse(
+            status = "200",
+            description = "User retrieved successfully",
+            content = {@OpenApiContent(from = PublicUser.class)}),
+        @OpenApiResponse(status = "404", description = "User not found")
+      })
   public void getOne(Context ctx) {
     Integer id = ctx.pathParamAsClass("id", Integer.class).get();
 
@@ -81,6 +121,18 @@ public class UsersController {
    *
    * @param ctx the Javalin context containing the request and response
    */
+  @OpenApi(
+      path = "/users/list",
+      methods = {HttpMethod.GET},
+      summary = "Get multiple users",
+      description = "Retrieves multiple users, optionally filtered by first name and/or last name.",
+      tags = {"User Management"},
+      responses = {
+        @OpenApiResponse(
+            status = "200",
+            description = "Users retrieved successfully",
+            content = {@OpenApiContent(from = PublicUser[].class)})
+      })
   public void getMany(Context ctx) {
     String firstName = ctx.queryParam("firstName");
     String lastName = ctx.queryParam("lastName");
@@ -110,6 +162,28 @@ public class UsersController {
    * @throws NotFoundResponse if the user with the specified ID does not exist
    * @throws ConflictResponse if a user with the same email already exists
    */
+  @OpenApi(
+      path = "/users/update/{id}",
+      methods = {HttpMethod.PUT},
+      summary = "Update an existing user",
+      description = "Updates the details of an existing user.",
+      pathParams = {
+        @OpenApiParam(name = "id", type = Integer.class, description = "User ID", required = true)
+      },
+      requestBody =
+          @OpenApiRequestBody(
+              content = {
+                @OpenApiContent(
+                    type = "application/json",
+                    example =
+                        "{\"firstName\":\"John\",\"lastName\":\"Doe\",\"email\":\"john.doe@example.com\",\"password\":\"password\",\"role\":\"1\"}")
+              }),
+      tags = {"User Management"},
+      responses = {
+        @OpenApiResponse(status = "200", description = "User updated successfully"),
+        @OpenApiResponse(status = "404", description = "User not found"),
+        @OpenApiResponse(status = "409", description = "User with the same email already exists")
+      })
   public void update(Context ctx) {
     Integer id = ctx.pathParamAsClass("id", Integer.class).get();
 
@@ -161,6 +235,19 @@ public class UsersController {
    * @param ctx the Javalin context containing the request and response
    * @throws NotFoundResponse if the user with the specified ID does not exist
    */
+  @OpenApi(
+      path = "/users/remove/{id}",
+      methods = {HttpMethod.DELETE},
+      summary = "Delete a user",
+      description = "Deletes a user by their ID.",
+      pathParams = {
+        @OpenApiParam(name = "id", type = Integer.class, description = "User ID", required = true)
+      },
+      tags = {"User Management"},
+      responses = {
+        @OpenApiResponse(status = "200", description = "User deleted successfully"),
+        @OpenApiResponse(status = "404", description = "User not found")
+      })
   public void delete(Context ctx) {
     Integer id = ctx.pathParamAsClass("id", Integer.class).get();
 

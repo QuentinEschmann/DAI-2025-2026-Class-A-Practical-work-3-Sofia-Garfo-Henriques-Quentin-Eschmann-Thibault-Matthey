@@ -4,6 +4,11 @@ import ch.heigvd.project3.users.User;
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import io.javalin.http.*;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
@@ -31,6 +36,23 @@ public class AuthController {
    * @param ctx the Javalin context containing the request and response
    * @throws UnauthorizedResponse if the credentials are invalid
    */
+  @OpenApi(
+      path = "/auth/login",
+      methods = {HttpMethod.POST},
+      summary = "User login",
+      description = "Authenticates a user and issues a JWT upon successful login.",
+      requestBody =
+          @OpenApiRequestBody(
+              content = {
+                @OpenApiContent(
+                    type = "application/json",
+                    example = "{\"email\":\"user@example.com\",\"password\":\"password\"}")
+              }),
+      tags = {"Authentication"},
+      responses = {
+        @OpenApiResponse(status = "200", description = "Login successful"),
+        @OpenApiResponse(status = "401", description = "Invalid email or password")
+      })
   public void login(Context ctx) {
     User loginUser =
         ctx.bodyValidator(User.class)
@@ -60,6 +82,13 @@ public class AuthController {
    *
    * @param ctx the Javalin context containing the request and response
    */
+  @OpenApi(
+      path = "/auth/logout",
+      methods = {HttpMethod.POST},
+      summary = "User logout",
+      description = "Logs out the user by removing the session cookie.",
+      tags = {"Authentication"},
+      responses = {@OpenApiResponse(status = "200", description = "Logout successful")})
   public void logout(Context ctx) {
     ctx.removeCookie(SESSION_COOKIE_NAME);
     ctx.status(HttpStatus.OK);
@@ -70,6 +99,19 @@ public class AuthController {
    *
    * @param ctx the Javalin context containing the request and response
    */
+  @OpenApi(
+      path = "/auth/profile",
+      methods = {HttpMethod.GET},
+      summary = "Get user profile",
+      description = "Retrieves the profile of the authenticated user.",
+      tags = {"Authentication"},
+      responses = {
+        @OpenApiResponse(
+            status = "200",
+            description = "Profile retrieved successfully",
+            content = {@OpenApiContent(from = User.class)}),
+        @OpenApiResponse(status = "401", description = "User not authenticated")
+      })
   public void profile(Context ctx) {
     User user = ctx.attribute(AUTHENTICATED_USER_KEY);
     if (user == null) {

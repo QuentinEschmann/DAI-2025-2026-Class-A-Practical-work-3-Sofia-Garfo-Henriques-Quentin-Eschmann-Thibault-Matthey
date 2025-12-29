@@ -1,6 +1,12 @@
 package ch.heigvd.project3.inventory;
 
 import io.javalin.http.*;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,6 +34,26 @@ public class InventoryController {
    * @param ctx the Javalin context containing the request and response
    * @throws ConflictResponse if an item with the same name already exists
    */
+  @OpenApi(
+      path = "/inventory/create",
+      methods = {HttpMethod.POST},
+      summary = "Create a new item",
+      description = "Creates a new item in the inventory.",
+      requestBody =
+          @OpenApiRequestBody(
+              content = {
+                @OpenApiContent(
+                    type = "application/json",
+                    example = "{\"name\":\"itemName\",\"num\":10}")
+              }),
+      tags = {"Inventory Management"},
+      responses = {
+        @OpenApiResponse(
+            status = "201",
+            description = "Item created successfully",
+            content = {@OpenApiContent(from = Item.class)}),
+        @OpenApiResponse(status = "409", description = "Item with the same name already exists")
+      })
   public void create(Context ctx) {
     Item newitem =
         ctx.bodyValidator(Item.class)
@@ -56,6 +82,22 @@ public class InventoryController {
    * @param ctx the Javalin context containing the request and response
    * @throws NotFoundResponse if the item with the specified ID does not exist
    */
+  @OpenApi(
+      path = "/inventory/list/{id}",
+      methods = {HttpMethod.GET},
+      summary = "Get an item by ID",
+      description = "Retrieves a single item from the inventory by its ID.",
+      pathParams = {
+        @OpenApiParam(name = "id", type = Integer.class, description = "User ID", required = true)
+      },
+      tags = {"Inventory Management"},
+      responses = {
+        @OpenApiResponse(
+            status = "200",
+            description = "Item retrieved successfully",
+            content = {@OpenApiContent(from = Item.class)}),
+        @OpenApiResponse(status = "404", description = "Item not found")
+      })
   public void getOne(Context ctx) {
     Integer id = ctx.pathParamAsClass("id", Integer.class).get();
 
@@ -73,6 +115,18 @@ public class InventoryController {
    *
    * @param ctx the Javalin context containing the request and response
    */
+  @OpenApi(
+      path = "/inventory/list",
+      methods = {HttpMethod.GET},
+      summary = "Get multiple items",
+      description = "Retrieves multiple items from the inventory, optionally filtered by name.",
+      tags = {"Inventory Management"},
+      responses = {
+        @OpenApiResponse(
+            status = "200",
+            description = "Items retrieved successfully",
+            content = {@OpenApiContent(from = Item[].class)})
+      })
   public void getMany(Context ctx) {
     String name = ctx.queryParam("name");
 
@@ -99,6 +153,30 @@ public class InventoryController {
    * @throws NotFoundResponse if the item with the specified ID does not exist
    * @throws ConflictResponse if an item with the same name already exists
    */
+  @OpenApi(
+      path = "/inventory/update/{id}",
+      methods = {HttpMethod.PUT},
+      summary = "Update an item",
+      description = "Updates an existing item in the inventory.",
+      pathParams = {
+        @OpenApiParam(name = "id", type = Integer.class, description = "User ID", required = true)
+      },
+      requestBody =
+          @OpenApiRequestBody(
+              content = {
+                @OpenApiContent(
+                    type = "application/json",
+                    example = "{\"name\":\"itemName\",\"num\":10}")
+              }),
+      tags = {"Inventory Management"},
+      responses = {
+        @OpenApiResponse(
+            status = "200",
+            description = "Item updated successfully",
+            content = {@OpenApiContent(from = Item.class)}),
+        @OpenApiResponse(status = "404", description = "Item not found"),
+        @OpenApiResponse(status = "409", description = "Item with the same name already exists")
+      })
   public void update(Context ctx) {
     Integer id = ctx.pathParamAsClass("id", Integer.class).get();
 
@@ -132,6 +210,19 @@ public class InventoryController {
    * @param ctx the Javalin context containing the request and response
    * @throws NotFoundResponse if the item with the specified ID does not exist
    */
+  @OpenApi(
+      path = "/inventory/remove/{id}",
+      methods = {HttpMethod.DELETE},
+      summary = "Delete an item",
+      description = "Deletes an item from the inventory by its ID.",
+      pathParams = {
+        @OpenApiParam(name = "id", type = Integer.class, description = "User ID", required = true)
+      },
+      tags = {"Inventory Management"},
+      responses = {
+        @OpenApiResponse(status = "200", description = "Item deleted successfully"),
+        @OpenApiResponse(status = "404", description = "Item not found")
+      })
   public void delete(Context ctx) {
     Integer id = ctx.pathParamAsClass("id", Integer.class).get();
 

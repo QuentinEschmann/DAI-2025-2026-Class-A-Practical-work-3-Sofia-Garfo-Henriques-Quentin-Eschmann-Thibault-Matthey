@@ -5,7 +5,7 @@ import de.mkammerer.argon2.Argon2Factory;
 import io.javalin.http.InternalServerErrorResponse;
 
 public class AuthUtil {
-   /**
+  /**
    * Creates a hash of the given password using Argon2.
    *
    * @param pass the password to hash
