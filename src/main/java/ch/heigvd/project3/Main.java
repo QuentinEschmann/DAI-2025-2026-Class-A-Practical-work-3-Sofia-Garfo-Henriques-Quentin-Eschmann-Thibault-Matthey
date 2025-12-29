@@ -7,11 +7,11 @@ import ch.heigvd.project3.inventory.Item;
 import ch.heigvd.project3.users.Role;
 import ch.heigvd.project3.users.User;
 import ch.heigvd.project3.users.UsersController;
-import de.mkammerer.argon2.Argon2;
-import de.mkammerer.argon2.Argon2Factory;
 import io.javalin.Javalin;
 import io.javalin.http.ForbiddenResponse;
 import io.javalin.http.UnauthorizedResponse;
+import io.javalin.openapi.plugin.OpenApiPlugin;
+import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -33,15 +33,8 @@ public class Main {
     ConcurrentHashMap<Integer, Item> inventory = new ConcurrentHashMap<>();
 
     // default admin user
-    Argon2 argon2 = Argon2Factory.create();
     User defaultAdmin =
-        new User(
-            0,
-            "Admin",
-            "User",
-            "admin@example.com",
-            AuthUtil.createHash("admin"),
-            Role.ADMIN);
+        new User(0, "Admin", "User", "admin@example.com", AuthUtil.createHash("admin"), Role.ADMIN);
     users.put(defaultAdmin.id(), defaultAdmin);
 
     AuthController authController = new AuthController(users);
@@ -51,15 +44,31 @@ public class Main {
     // for testing purposes
     Javalin app =
         Javalin.create(
-            config ->
-                config.bundledPlugins.enableCors(
-                    cors ->
-                        cors.addRule(
-                            rule -> {
-                              // allow credentialed requests from any origin
-                              rule.reflectClientOrigin = true;
-                              rule.allowCredentials = true;
-                            })));
+            config -> {
+
+              // OpenAPI spec
+              config.registerPlugin(
+                  new OpenApiPlugin(
+                      openApi -> {
+                        openApi.withDocumentationPath("/swagger-docs");
+                        openApi.withDefinitionConfiguration(
+                            (ver, def) -> {
+                              def.withInfo(
+                                  info -> {
+                                    info.setTitle("Project 3 API");
+                                    info.setVersion("v1");
+                                  });
+                            });
+                      }));
+
+              // Swagger UI
+              config.registerPlugin(
+                  new SwaggerPlugin(
+                      swagger -> {
+                        swagger.setUiPath("/swagger");
+                        swagger.setDocumentationPath("/swagger-docs");
+                      }));
+            });
 
     app.before(
         ctx -> {
