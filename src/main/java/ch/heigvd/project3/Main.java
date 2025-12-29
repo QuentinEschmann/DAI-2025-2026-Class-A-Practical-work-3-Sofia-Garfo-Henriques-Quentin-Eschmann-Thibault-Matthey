@@ -7,8 +7,6 @@ import ch.heigvd.project3.inventory.Item;
 import ch.heigvd.project3.users.Role;
 import ch.heigvd.project3.users.User;
 import ch.heigvd.project3.users.UsersController;
-import de.mkammerer.argon2.Argon2;
-import de.mkammerer.argon2.Argon2Factory;
 import io.javalin.Javalin;
 import io.javalin.http.ForbiddenResponse;
 import io.javalin.http.UnauthorizedResponse;
@@ -35,7 +33,6 @@ public class Main {
     ConcurrentHashMap<Integer, Item> inventory = new ConcurrentHashMap<>();
 
     // default admin user
-    Argon2 argon2 = Argon2Factory.create();
     User defaultAdmin =
         new User(0, "Admin", "User", "admin@example.com", AuthUtil.createHash("admin"), Role.ADMIN);
     users.put(defaultAdmin.id(), defaultAdmin);
@@ -48,15 +45,6 @@ public class Main {
     Javalin app =
         Javalin.create(
             config -> {
-              // CORS
-              config.bundledPlugins.enableCors(
-                  cors -> {
-                    cors.addRule(
-                        rule -> {
-                          rule.reflectClientOrigin = true;
-                          rule.allowCredentials = true;
-                        });
-                  });
 
               // OpenAPI spec
               config.registerPlugin(
