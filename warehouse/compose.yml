@@ -1,0 +1,23 @@
+networks:
+  # We use an external network as it is created by Traefik
+  traefik_network:
+    external: true
+
+services:
+  warehouse-api:
+    image: ghcr.io/aihxpos111/warehouse-api:latest
+    container_name: warehouse-api
+    restart: unless-stopped
+    networks:
+      # Attach the container to the Traefik network
+      - traefik_network
+    expose:
+      - 8080
+    labels:
+      ## Traefik
+      - traefik.enable=true
+      ## Routers
+      # The entrypoint of this container is HTTPS
+      - traefik.http.routers.warehouse-api.entrypoints=https
+      # This container is accessible with the fully qualified domain name
+      - traefik.http.routers.warehouse-api.rule=Host(`warehouse.ddnsfree.com`)
