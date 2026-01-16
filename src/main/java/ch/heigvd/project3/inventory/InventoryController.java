@@ -7,7 +7,11 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -105,7 +109,18 @@ public class InventoryController {
     if (item == null) {
       throw new NotFoundResponse("Item not found.");
     }
+    String etag = computeItemEtag(item);
+    String ifNoneMatch = ctx.header(Header.IF_NONE_MATCH);
 
+    if (etagMatches(ifNoneMatch, etag)) {
+      ctx.header(Header.ETAG, etag);
+      ctx.header(Header.CACHE_CONTROL, "public, max-age=0, must-revalidate");
+      ctx.status(HttpStatus.NOT_MODIFIED);
+      return;
+    }
+
+    ctx.header(Header.ETAG, etag);
+    ctx.header(Header.CACHE_CONTROL, "public, max-age=0, must-revalidate");
     ctx.status(HttpStatus.OK);
     ctx.json(item);
   }
@@ -142,6 +157,18 @@ public class InventoryController {
       }
     }
 
+    String etag = computeListEtag(items, name);
+    String ifNoneMatch = ctx.header(Header.IF_NONE_MATCH);
+
+    if (etagMatches(ifNoneMatch, etag)) {
+      ctx.header(Header.ETAG, etag);
+      ctx.header(Header.CACHE_CONTROL, "private, max-age=0, must-revalidate");
+      ctx.status(HttpStatus.NOT_MODIFIED);
+      return;
+    }
+
+    ctx.header(Header.ETAG, etag);
+    ctx.header(Header.CACHE_CONTROL, "private, max-age=0, must-revalidate");
     ctx.status(HttpStatus.OK);
     ctx.json(items);
   }
@@ -233,5 +260,61 @@ public class InventoryController {
     inventory.remove(id);
 
     ctx.status(HttpStatus.OK);
+  }
+
+  private String computeItemEtag(Item item) {
+    String payload = item.id() + "|" + item.name() + "|" + item.num();
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] hash = digest.digest(payload.getBytes(StandardCharsets.UTF_8));
+      String b64 = Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
+      return "W/\"" + b64 + "\"";
+    } catch (NoSuchAlgorithmException e) {
+      String fallback = Integer.toHexString(payload.hashCode());
+      return "W/\"" + fallback + "\"";
+    }
+  }
+
+  private boolean etagMatches(String ifNoneMatch, String etag) {
+    if (ifNoneMatch == null || ifNoneMatch.isBlank()) {
+      return false;
+    }
+    String candidate = ifNoneMatch.trim();
+    if ("*".equals(candidate)) {
+      return true;
+    }
+    // Support a simple comma-separated list of tags
+    String[] parts = candidate.split(",");
+    for (String part : parts) {
+      if (part.trim().equals(etag)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private String computeListEtag(List<Item> items, String filterName) {
+    List<Item> ordered = new ArrayList<>(items);
+    ordered.sort((a, b) -> Integer.compare(a.id(), b.id()));
+
+    String key =
+        (filterName == null || filterName.equalsIgnoreCase("all"))
+            ? "all"
+            : filterName.toLowerCase();
+
+    StringBuilder sb = new StringBuilder(key);
+    for (Item it : ordered) {
+      sb.append('|').append(it.id()).append(':').append(it.name()).append(':').append(it.num());
+    }
+
+    byte[] data = sb.toString().getBytes(StandardCharsets.UTF_8);
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      String b64 = Base64.getUrlEncoder().withoutPadding().encodeToString(digest.digest(data));
+      return "W/\"" + b64 + "\"";
+    } catch (NoSuchAlgorithmException e) {
+      String fallback = Integer.toHexString(sb.toString().hashCode());
+      return "W/\"" + fallback + "\"";
+    }
   }
 }
