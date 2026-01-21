@@ -20,4 +20,4 @@ services:
       # The entrypoint of this container is HTTPS
       - traefik.http.routers.warehouse-api.entrypoints=https
       # This container is accessible with the fully qualified domain name
-      - traefik.http.routers.warehouse-api.rule=Host(`warehouse.ddnsfree.com`)
+      - traefik.http.routers.warehouse-api.rule=Host(`warehouse-dai.ddnsfree.com`)
