@@ -79,7 +79,38 @@ docker push ghcr.io/<username>/warehouse-api:<tag>
 
 ### Server Deployment
 
-This application runs on a Virtual Machine. First contact the team to get access to the machine.
+This application runs on a Virtual Machine. If you wish contact the team to get access to the machine or use your own virtual machine to deploy.
+
+#### Setting up your own server 
+
+To create your own virtual machine please follow these instructions: [Obtain a virtual machine on a cloud provider](https://github.com/heig-vd-dai-course/heig-vd-dai-course/tree/main/11.03-ssh-and-scp/01-course-material#obtain-a-virtual-machine-on-a-cloud-provider)
+
+Once you've set up the virtual machine you'll need to get your own domain name!
+
+To configure DNS for a new deployment you'll need two subdomains, one for the api and another for traefik
+Go to Dynu.com (or your prefered DNS provider), create an account and configure two DNS records, they must point to your virtual machine.
+
+For example we used Dynu as the DNS provider with the following records:
+
+| Type | Name | Ip | Purpose |
+|------|------|-------|---------|
+| A | warehouse.ddnsfree.com | 20.250.19.128 | Main API and Swagger UI |
+| A | traefik.warehouse.ddnsfree.com | 20.250.19.128 | Traefik Dashboard |
+
+If you use Dynu, the default are A/AAAA records.  If you use another provider be sure to select A Record when adding your domain.
+
+You can use `nslookup <yourdomain>>` to verify your DNS records are correctly configured.
+Please note that DNS changes may take 5-10 minutes to propagate globally.
+
+### Deploying on the virtual machines:
+
+To connect to the virtual machine :
+```bash
+ssh ubuntu@20.250.19.128
+```
+
+If your using your own virtual machine, be sure to replace the ip address by the one of your machine
+
 
 To start the API:
 
@@ -95,10 +126,14 @@ docker compose -f traefik/compose.yaml up -d
 docker compose -f warehouse/compose.yaml up -d
 ```
 
+Note : If your using your own virtual machine you can copy the Docker compose files to your machine using scp, don't forget to update the domain names!
+
 3. Access the application at:
    - API: `https://warehouse.ddnsfree.com`
    - Swagger UI: `https://warehouse.ddnsfree.com/swagger`
    - Traefik Dashboard: `https://traefik.warehouse.ddnsfree.com`
+
+   Or navigate to the domain names you have configured.
 
 ## API Documentation
 
@@ -162,7 +197,7 @@ curl -X 'POST' \
 
 
 Output:
-201 Item Created Sucefully
+201 Item Created Sucessfully
 
 
 ```json
@@ -183,7 +218,7 @@ curl -X 'GET' \
 ```
 
 Output:
-200 Item retrieved succesfully
+200 Item retrieved sucesfully
 
 ```json
 [
