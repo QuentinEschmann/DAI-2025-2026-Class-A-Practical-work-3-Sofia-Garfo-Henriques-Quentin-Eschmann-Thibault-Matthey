@@ -104,12 +104,43 @@ Please note that DNS changes may take 5-10 minutes to propagate globally.
 
 ### Deploying on the virtual machines:
 
-To connect to the virtual machine :
+#### Configure SSH access (no passwords)
+
+1. Share your public SSH key with the teaching staff (for example the content of `~/.ssh/id_ed25519.pub`).
+2. The key is stored on the VM in `/home/ubuntu/.ssh/authorized_keys`, which disables password prompts for everyone listed.
+3. You can confirm passwordless access with:
+
+```bash
+ssh -i ~/.ssh/id_ed25519 ubuntu@20.250.19.128 'echo ok'
+```
+
+If you use your own VM, copy your key to `~/.ssh/authorized_keys` (or use `ssh-copy-id`) and disable password authentication in `/etc/ssh/sshd_config`.
+
+#### Install Docker (rootless usage)
+
+```bash
+sudo apt-get update
+sudo apt-get install ca-certificates curl gnupg
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker $USER
+newgrp docker
+docker --version   # Docker version 25+
+docker compose version   # Docker Compose V2+
+```
+
+All project commands in this README run without `sudo`.
+
+#### Deploy the containers
+
+To connect to the virtual machine:
 ```bash
 ssh ubuntu@20.250.19.128
 ```
 
-If your using your own virtual machine, be sure to replace the ip address by the one of your machine
+If you're using your own virtual machine, be sure to replace the IP address by the one of your machine.
 
 
 To start the API:
@@ -123,10 +154,11 @@ docker compose --env-file traefik/.env -f traefik/compose.yml up -d
 2. Start the API:
 
 ```bash
-docker compose -f warehouse/compose.yml up -d
+docker compose --env-file warehouse/.env -f warehouse/compose.yml up -d
 ```
 
-Note : If your using your own virtual machine you can copy the Docker compose files to your machine using scp, don't forget to update the domain names!
+
+Note : If you're using your own virtual machine you can copy the Docker compose files to your machine using scp, don't forget to update the domain names!
 
 3. Access the application at:
    - API: `https://warehouse-dai.ddnsfree.com`
@@ -154,6 +186,8 @@ The complete API specification can be accessed at:
 ## Usage Examples
 
 ### Authentication
+
+All authenticated requests reuse the session cookie stored in `cookies.txt`.
 
 Login with default admin credentials:
 
@@ -185,7 +219,7 @@ Create a few items:
 
 ```bash
 
-curl -X 'POST' \
+curl -b cookies.txt -X 'POST' \
   'https://warehouse-dai.ddnsfree.com/inventory/create' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
@@ -204,7 +238,7 @@ Output:
 {
   "id": 1,
   "name": "chair",
-  "num": 1
+  "num": 10
 }
 ```
 
@@ -212,7 +246,7 @@ Output:
 Get the list of all items:
 
 ```bash
-curl -X 'GET' \
+curl -b cookies.txt -X 'GET' \
   'https://warehouse-dai.ddnsfree.com/inventory/list' \
   -H 'accept: application/json'
 ```
@@ -233,8 +267,8 @@ Output:
 Get an Item by id that doesn't exist:
 
 ```bash
-curl -X 'GET' \
-  'https://warehouse-dai.ddnsfree.com/list/3' \
+curl -b cookies.txt -X 'GET' \
+  'https://warehouse-dai.ddnsfree.com/inventory/list/3' \
   -H 'accept: application/json'
 ```
 
@@ -253,7 +287,7 @@ Output:
 Update an item:
 
 ```bash
-curl -X 'PUT' \
+curl -b cookies.txt -X 'PUT' \
   'https://warehouse-dai.ddnsfree.com/inventory/update/1' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
@@ -277,7 +311,7 @@ Output:
 Adding another item with the same name:
 
 ```bash
-curl -X 'POST' \
+curl -b cookies.txt -X 'POST' \
   'https://warehouse-dai.ddnsfree.com/inventory/create' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
@@ -303,7 +337,7 @@ Output:
 Delete an item:
 
 ```bash
-curl -X 'DELETE' \
+curl -b cookies.txt -X 'DELETE' \
   'https://warehouse-dai.ddnsfree.com/inventory/remove/1' \
   -H 'accept: */*'
 ```
@@ -322,7 +356,7 @@ Output:
 Create a user:
 
 ```bash
-curl -X 'POST' \
+curl -b cookies.txt -X 'POST' \
   'https://warehouse-dai.ddnsfree.com/users/create' \
   -H 'accept: */*' \
   -H 'Content-Type: application/json' \
@@ -336,17 +370,12 @@ curl -X 'POST' \
 ```
 
 Output:
-201 - User created sucessfully
-```bash
- content-length: 0 
- content-type: text/plain 
- date: Sat,17 Jan 2026 15:45:51 GMT 
-```
+201 - User created sucessfully (empty body)
 
 List users:
 
 ```bash
-curl -X 'GET' \
+curl -b cookies.txt -X 'GET' \
   'https://warehouse-dai.ddnsfree.com/users/list' \
   -H 'accept: application/json'
 ```
@@ -376,7 +405,7 @@ Output:
 Update a user:
 
 ```bash
-curl -X 'PUT' \
+curl -b cookies.txt -X 'PUT' \
   'https://warehouse-dai.ddnsfree.com/users/update/1' \
   -H 'accept: */*' \
   -H 'Content-Type: application/json' \
@@ -390,27 +419,26 @@ curl -X 'PUT' \
 ```
 
 Output:
-Code 200 - User updated sucessfully
-
-```json
- content-length: 0 
- content-type: text/plain 
- date: Sat,17 Jan 2026 16:07:32 GMT 
-```
+200 - User updated sucessfully (empty body)
 
 Delete a user that doesn't exist: 
 
 ```bash
-curl -X 'DELETE' \
+curl -b cookies.txt -X 'DELETE' \
   'https://warehouse-dai.ddnsfree.com/users/remove/2' \
   -H 'accept: */*'
 ```
 
 Output:
-200 - User not found
+404 - User not found
 
 ```json
-User not found.
+{
+  "title": "User not found.",
+  "status": 404,
+  "type": "https://javalin.io/documentation#notfoundresponse",
+  "details": {}
+}
 ```
 
 
