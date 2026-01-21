@@ -99,8 +99,31 @@ public class InventoryController {
         @OpenApiResponse(
             status = "200",
             description = "Item retrieved successfully",
-            content = {@OpenApiContent(from = Item.class)}),
-        @OpenApiResponse(status = "404", description = "Item not found")
+            content = {@OpenApiContent(from = Item.class)},
+            headers = {
+              @OpenApiParam(
+                  name = "ETag",
+                  description = "Weak entity tag to support cache revalidation",
+                  type = String.class),
+              @OpenApiParam(
+                  name = "Cache-Control",
+                  description = "Cache policy directives for this response",
+                  type = String.class)
+            }),
+        @OpenApiResponse(status = "404", description = "Item not found"),
+        @OpenApiResponse(
+            status = "304",
+            description = "Item not modified",
+            headers = {
+              @OpenApiParam(
+                  name = "ETag",
+                  description = "Weak entity tag to support cache revalidation",
+                  type = String.class),
+              @OpenApiParam(
+                  name = "Cache-Control",
+                  description = "Cache policy directives for this response",
+                  type = String.class)
+            })
       })
   public void getOne(Context ctx) {
     Integer id = ctx.pathParamAsClass("id", Integer.class).get();
@@ -140,7 +163,30 @@ public class InventoryController {
         @OpenApiResponse(
             status = "200",
             description = "Items retrieved successfully",
-            content = {@OpenApiContent(from = Item[].class)})
+            content = {@OpenApiContent(from = Item[].class)},
+            headers = {
+              @OpenApiParam(
+                  name = "ETag",
+                  description = "Weak entity tag to support cache revalidation",
+                  type = String.class),
+              @OpenApiParam(
+                  name = "Cache-Control",
+                  description = "Cache policy directives for this response",
+                  type = String.class)
+            }),
+        @OpenApiResponse(
+            status = "304",
+            description = "Items not modified",
+            headers = {
+              @OpenApiParam(
+                  name = "ETag",
+                  description = "Weak entity tag to support cache revalidation",
+                  type = String.class),
+              @OpenApiParam(
+                  name = "Cache-Control",
+                  description = "Cache policy directives for this response",
+                  type = String.class)
+            })
       })
   public void getMany(Context ctx) {
     String name = ctx.queryParam("name");
@@ -262,6 +308,12 @@ public class InventoryController {
     ctx.status(HttpStatus.OK);
   }
 
+  /**
+   * Computes the etag for a single item
+   *
+   * @param item Item, the item to compute the etag for
+   * @return String, the computed etag
+   */
   private String computeItemEtag(Item item) {
     String payload = item.id() + "|" + item.name() + "|" + item.num();
     try {
@@ -275,6 +327,13 @@ public class InventoryController {
     }
   }
 
+  /**
+   * Checks if the provided ETag matches any of the ETags in the If-None-Match header.
+   *
+   * @param ifNoneMatch the value of the If-None-Match header
+   * @param etag the ETag to compare against
+   * @return true if there is a match, false otherwise
+   */
   private boolean etagMatches(String ifNoneMatch, String etag) {
     if (ifNoneMatch == null || ifNoneMatch.isBlank()) {
       return false;
@@ -293,6 +352,13 @@ public class InventoryController {
     return false;
   }
 
+  /**
+   * Computes the etag for multiples items item
+   *
+   * @param items List<Items>, list of all items in the db
+   * @param filterName String, name filter used
+   * @return String, the computed etag
+   */
   private String computeListEtag(List<Item> items, String filterName) {
     List<Item> ordered = new ArrayList<>(items);
     ordered.sort((a, b) -> Integer.compare(a.id(), b.id()));
