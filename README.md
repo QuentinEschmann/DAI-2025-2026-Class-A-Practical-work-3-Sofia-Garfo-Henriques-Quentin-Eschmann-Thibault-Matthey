@@ -424,3 +424,6 @@ The cache is currently implemented for the inventory and the user management sys
 - DAI Course Materials
 - Stack Overflow  
 - GitHub Copilot 
+- https://www.baeldung.com/java-argon2-hashing
+- https://www.baeldung.com/spring-rest-openapi-documentation
+- https://www.baeldung.com/java-json-web-tokens-jjwt
