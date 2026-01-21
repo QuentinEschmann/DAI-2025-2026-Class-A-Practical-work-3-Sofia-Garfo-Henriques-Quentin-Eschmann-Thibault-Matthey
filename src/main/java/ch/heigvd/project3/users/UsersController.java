@@ -8,7 +8,11 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -100,8 +104,31 @@ public class UsersController {
         @OpenApiResponse(
             status = "200",
             description = "User retrieved successfully",
-            content = {@OpenApiContent(from = PublicUser.class)}),
-        @OpenApiResponse(status = "404", description = "User not found")
+            content = {@OpenApiContent(from = PublicUser.class)},
+            headers = {
+              @OpenApiParam(
+                  name = "ETag",
+                  description = "Weak entity tag to support cache revalidation",
+                  type = String.class),
+              @OpenApiParam(
+                  name = "Cache-Control",
+                  description = "Cache policy directives for this response",
+                  type = String.class)
+            }),
+        @OpenApiResponse(status = "404", description = "User not found"),
+        @OpenApiResponse(
+            status = "304",
+            description = "User not modified",
+            headers = {
+              @OpenApiParam(
+                  name = "ETag",
+                  description = "Weak entity tag to support cache revalidation",
+                  type = String.class),
+              @OpenApiParam(
+                  name = "Cache-Control",
+                  description = "Cache policy directives for this response",
+                  type = String.class)
+            })
       })
   public void getOne(Context ctx) {
     Integer id = ctx.pathParamAsClass("id", Integer.class).get();
@@ -112,8 +139,21 @@ public class UsersController {
       throw new NotFoundResponse();
     }
 
+    PublicUser publicUser = toPublicUser(user);
+    String etag = computeUserEtag(publicUser);
+    String ifNoneMatch = ctx.header(Header.IF_NONE_MATCH);
+
+    if (etagMatches(ifNoneMatch, etag)) {
+      ctx.header(Header.ETAG, etag);
+      ctx.header(Header.CACHE_CONTROL, "public, max-age=0, must-revalidate");
+      ctx.status(HttpStatus.NOT_MODIFIED);
+      return;
+    }
+
+    ctx.header(Header.ETAG, etag);
+    ctx.header(Header.CACHE_CONTROL, "public, max-age=0, must-revalidate");
     ctx.status(HttpStatus.OK);
-    ctx.json(toPublicUser(user));
+    ctx.json(publicUser);
   }
 
   /**
@@ -131,13 +171,36 @@ public class UsersController {
         @OpenApiResponse(
             status = "200",
             description = "Users retrieved successfully",
-            content = {@OpenApiContent(from = PublicUser[].class)})
+            content = {@OpenApiContent(from = PublicUser[].class)},
+            headers = {
+              @OpenApiParam(
+                  name = "ETag",
+                  description = "Weak entity tag to support cache revalidation",
+                  type = String.class),
+              @OpenApiParam(
+                  name = "Cache-Control",
+                  description = "Cache policy directives for this response",
+                  type = String.class)
+            }),
+        @OpenApiResponse(
+            status = "304",
+            description = "Users not modified",
+            headers = {
+              @OpenApiParam(
+                  name = "ETag",
+                  description = "Weak entity tag to support cache revalidation",
+                  type = String.class),
+              @OpenApiParam(
+                  name = "Cache-Control",
+                  description = "Cache policy directives for this response",
+                  type = String.class)
+            })
       })
   public void getMany(Context ctx) {
     String firstName = ctx.queryParam("firstName");
     String lastName = ctx.queryParam("lastName");
 
-    List<PublicUser> users = new ArrayList<>();
+    List<PublicUser> usersResult = new ArrayList<>();
 
     for (User user : this.users.values()) {
       if (firstName != null && !user.firstName().equalsIgnoreCase(firstName)) {
@@ -148,11 +211,23 @@ public class UsersController {
         continue;
       }
 
-      users.add(toPublicUser(user));
+      usersResult.add(toPublicUser(user));
     }
 
+    String etag = computeUserListEtag(usersResult, firstName, lastName);
+    String ifNoneMatch = ctx.header(Header.IF_NONE_MATCH);
+
+    if (etagMatches(ifNoneMatch, etag)) {
+      ctx.header(Header.ETAG, etag);
+      ctx.header(Header.CACHE_CONTROL, "private, max-age=0, must-revalidate");
+      ctx.status(HttpStatus.NOT_MODIFIED);
+      return;
+    }
+
+    ctx.header(Header.ETAG, etag);
+    ctx.header(Header.CACHE_CONTROL, "private, max-age=0, must-revalidate");
     ctx.status(HttpStatus.OK);
-    ctx.json(users);
+    ctx.json(usersResult);
   }
 
   /**
@@ -268,5 +343,98 @@ public class UsersController {
    */
   private PublicUser toPublicUser(User u) {
     return new PublicUser(u.id(), u.firstName(), u.lastName(), u.email(), u.role());
+  }
+
+  /**
+   * Checks if the provided ETag matches the If-None-Match header.
+   *
+   * @param ifNoneMatch String, the value of the If-None-Match header
+   * @param etag String, the computed ETag of the resource
+   * @return boolean, true if there is a match, false otherwise
+   */
+  private boolean etagMatches(String ifNoneMatch, String etag) {
+    if (ifNoneMatch == null || ifNoneMatch.isBlank()) {
+      return false;
+    }
+    String candidate = ifNoneMatch.trim();
+    if ("*".equals(candidate)) {
+      return true;
+    }
+    String[] parts = candidate.split(",");
+    for (String part : parts) {
+      if (part.trim().equals(etag)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Computes a weak ETag for a PublicUser.
+   *
+   * @param user PublicUser, the PublicUser for which to compute the ETag
+   * @return a weak ETag string representing the PublicUser
+   */
+  private String computeUserEtag(PublicUser user) {
+    String payload =
+        user.id()
+            + "|"
+            + user.firstName()
+            + "|"
+            + user.lastName()
+            + "|"
+            + user.email()
+            + "|"
+            + user.role();
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] hash = digest.digest(payload.getBytes(StandardCharsets.UTF_8));
+      String b64 = Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
+      return "W/\"" + b64 + "\"";
+    } catch (NoSuchAlgorithmException e) {
+      String fallback = Integer.toHexString(payload.hashCode());
+      return "W/\"" + fallback + "\"";
+    }
+  }
+
+  /**
+   * Computes a weak ETag for a list of PublicUsers, considering optional filters.
+   *
+   * @param users List<PublicUser>, the list of PublicUsers to compute the ETag for
+   * @param filterFirstName String, optional first name filter
+   * @param filterLastName String, optional last name filter
+   * @return a weak ETag string representing the list of PublicUsers and applied filters
+   */
+  private String computeUserListEtag(
+      List<PublicUser> users, String filterFirstName, String filterLastName) {
+    List<PublicUser> ordered = new ArrayList<>(users);
+    ordered.sort((a, b) -> Integer.compare(a.id(), b.id()));
+
+    String first = filterFirstName == null ? "*" : filterFirstName.trim().toLowerCase();
+    String last = filterLastName == null ? "*" : filterLastName.trim().toLowerCase();
+
+    StringBuilder sb = new StringBuilder(first).append('|').append(last);
+    for (PublicUser user : ordered) {
+      sb.append('|')
+          .append(user.id())
+          .append(':')
+          .append(user.firstName())
+          .append(':')
+          .append(user.lastName())
+          .append(':')
+          .append(user.email())
+          .append(':')
+          .append(user.role());
+    }
+
+    byte[] data = sb.toString().getBytes(StandardCharsets.UTF_8);
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      String b64 = Base64.getUrlEncoder().withoutPadding().encodeToString(digest.digest(data));
+      return "W/\"" + b64 + "\"";
+    } catch (NoSuchAlgorithmException e) {
+      String fallback = Integer.toHexString(sb.toString().hashCode());
+      return "W/\"" + fallback + "\"";
+    }
   }
 }
