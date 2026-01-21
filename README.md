@@ -94,8 +94,8 @@ For example we used Dynu as the DNS provider with the following records:
 
 | Type | Name | Ip | Purpose |
 |------|------|-------|---------|
-| A | warehouse.ddnsfree.com | 20.250.19.128 | Main API and Swagger UI |
-| A | traefik.warehouse.ddnsfree.com | 20.250.19.128 | Traefik Dashboard |
+| A | warehouse-dai.ddnsfree.com | 20.250.19.128 | Main API and Swagger UI |
+| A | traefik.warehouse-dai.ddnsfree.com | 20.250.19.128 | Traefik Dashboard |
 
 If you use Dynu, the default are A/AAAA records.  If you use another provider be sure to select A Record when adding your domain.
 
@@ -117,21 +117,21 @@ To start the API:
 1. Start Traefik:
 
 ```bash
-docker compose -f traefik/compose.yaml up -d
+docker compose --env-file traefik/.env -f traefik/compose.yml up -d
 ```
 
 2. Start the API:
 
 ```bash
-docker compose -f warehouse/compose.yaml up -d
+docker compose -f warehouse/compose.yml up -d
 ```
 
 Note : If your using your own virtual machine you can copy the Docker compose files to your machine using scp, don't forget to update the domain names!
 
 3. Access the application at:
-   - API: `https://warehouse.ddnsfree.com`
-   - Swagger UI: `https://warehouse.ddnsfree.com/swagger`
-   - Traefik Dashboard: `https://traefik.warehouse.ddnsfree.com`
+   - API: `https://warehouse-dai.ddnsfree.com`
+   - Swagger UI: `https://warehouse-dai.ddnsfree.com/swagger`
+   - Traefik Dashboard: `https://traefik.warehouse-dai.ddnsfree.com`
 
    Or navigate to the domain names you have configured.
 
@@ -139,9 +139,9 @@ Note : If your using your own virtual machine you can copy the Docker compose fi
 
 The application provides an HTTP API with CRUD operations for the following resources:
 
-- **Authentication**: `/auth/login` - User authentication and session management
-- **Users**: `/users/create`, `/users/list`, `/users/update`, `/users/delete` - User management
-- **Inventory**: `/inventory/create`, `/inventory/list`, `/inventory/update`, `/inventory/delete` - Inventory item management
+- **Authentication**: `/auth/login`, `/auth/logout`, `/auth/profile` - User authentication and session management
+- **Users**: `/users/create`, `/users/list`, `/users/update`, `/users/remove` - User management
+- **Inventory**: `/inventory/create`, `/inventory/list`, `/inventory/update`, `/inventory/remove` - Inventory item management
 
 - **Default Admin Credentials**:
 Email: admin@example.com
@@ -149,7 +149,7 @@ Password: admin
 
 The complete API specification can be accessed at:
 - Local: `http://localhost:8080/swagger`
-- Production: `https://warehouse.ddnsfree.com/swagger`
+- Production: `https://warehouse-dai.ddnsfree.com/swagger`
 
 ## Usage Examples
 
@@ -159,7 +159,7 @@ Login with default admin credentials:
 
 ```bash
 curl -X 'POST' \
-  'https://warehouse.ddnsfree.com/auth/login' \
+  'https://warehouse-dai.ddnsfree.com/auth/login' \
   -H 'accept: */*' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -186,7 +186,7 @@ Create a few items:
 ```bash
 
 curl -X 'POST' \
-  'https://warehouse.ddnsfree.com/create' \
+  'https://warehouse-dai.ddnsfree.com/inventory/create' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -213,7 +213,7 @@ Get the list of all items:
 
 ```bash
 curl -X 'GET' \
-  'https://warehouse.ddnsfree.com/inventory/list' \
+  'https://warehouse-dai.ddnsfree.com/inventory/list' \
   -H 'accept: application/json'
 ```
 
@@ -234,7 +234,7 @@ Get an Item by id that doesn't exist:
 
 ```bash
 curl -X 'GET' \
-  'https://warehouse.ddnsfree.com/list/3' \
+  'https://warehouse-dai.ddnsfree.com/list/3' \
   -H 'accept: application/json'
 ```
 
@@ -254,7 +254,7 @@ Update an item:
 
 ```bash
 curl -X 'PUT' \
-  'https://warehouse.ddnsfree.com/inventory/update/1' \
+  'https://warehouse-dai.ddnsfree.com/inventory/update/1' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -278,7 +278,7 @@ Adding another item with the same name:
 
 ```bash
 curl -X 'POST' \
-  'https://warehouse.ddnsfree.com/inventory/create' \
+  'https://warehouse-dai.ddnsfree.com/inventory/create' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -304,7 +304,7 @@ Delete an item:
 
 ```bash
 curl -X 'DELETE' \
-  'https://warehouse.ddnsfree.com/inventory/remove/1' \
+  'https://warehouse-dai.ddnsfree.com/inventory/remove/1' \
   -H 'accept: */*'
 ```
 
@@ -323,7 +323,7 @@ Create a user:
 
 ```bash
 curl -X 'POST' \
-  'https://warehouse.ddnsfree.com/users/create' \
+  'https://warehouse-dai.ddnsfree.com/users/create' \
   -H 'accept: */*' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -336,7 +336,7 @@ curl -X 'POST' \
 ```
 
 Output:
-2001 - User created sucessfully
+201 - User created sucessfully
 ```bash
  content-length: 0 
  content-type: text/plain 
@@ -347,7 +347,7 @@ List users:
 
 ```bash
 curl -X 'GET' \
-  'https://warehouse.ddnsfree.com/users/list' \
+  'https://warehouse-dai.ddnsfree.com/users/list' \
   -H 'accept: application/json'
 ```
 
@@ -377,7 +377,7 @@ Update a user:
 
 ```bash
 curl -X 'PUT' \
-  'https://warehouse.ddnsfree.com/users/update/1' \
+  'https://warehouse-dai.ddnsfree.com/users/update/1' \
   -H 'accept: */*' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -402,7 +402,7 @@ Delete a user that doesn't exist:
 
 ```bash
 curl -X 'DELETE' \
-  'https://warehouse.ddnsfree.com/users/remove/2' \
+  'https://warehouse-dai.ddnsfree.com/users/remove/2' \
   -H 'accept: */*'
 ```
 
